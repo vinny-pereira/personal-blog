@@ -14,7 +14,7 @@ type PageData struct{
 }
 
 func main(){
-    var viewsDir = "../views";
+    var viewsDir = "./views";
     var template_paths []string;
     templates := make(map[string]*template.Template);
 
@@ -24,13 +24,13 @@ func main(){
         }
 
         if !info.IsDir(){
-            relPath, err := filepath.Rel(viewsDir, path);
+            relPath, err := filepath.Rel("./", path);
 
             if err != nil{
                 return err;
             }
 
-            template_paths = append(template_paths, relPath);
+            template_paths = append(template_paths, "./" + relPath);
         }
 
         return nil
@@ -48,19 +48,31 @@ func main(){
             continue;
         }
 
-        templates[tmpl.Name()] = tmpl;
+        for _, tmpl := range tmpl.Templates() {
+            templates[tmpl.Name()] = tmpl
+        }
     }
+ 
+    fs := http.FileServer(http.Dir("/dist"));
 
-    fs := http.FileServer(http.Dir("../dist"));
+    http.Handle("GET /dist", http.StripPrefix("/dist", fs));
+    http.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request){
+        tmpl, ok := templates["index"];
+    
+        log.Println(templates)
+        log.Println(tmpl)
 
-    http.Handle("/dist", http.StripPrefix("dist", fs));
-    http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request){
-        tmpl := templates["index"];
+        if !ok{
+            w.WriteHeader(http.StatusNotFound);
+            return;
+        }
         data := PageData{
             Name: "Blog",
         }
 
+
         if err := tmpl.ExecuteTemplate(w, "index", data); err != nil{
+            log.Println(err)
             http.Error(w, "Error executing template.", http.StatusInternalServerError);
         }
     });
