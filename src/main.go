@@ -52,15 +52,12 @@ func main(){
             templates[tmpl.Name()] = tmpl
         }
     }
- 
-    fs := http.FileServer(http.Dir("/dist"));
 
-    http.Handle("GET /dist", http.StripPrefix("/dist", fs));
-    http.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request){
+    fs := http.FileServer(http.Dir("./dist"))
+    http.Handle("/dist/", http.StripPrefix("/dist/", fs))
+ 
+    http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request){
         tmpl, ok := templates["index"];
-    
-        log.Println(templates)
-        log.Println(tmpl)
 
         if !ok{
             w.WriteHeader(http.StatusNotFound);
