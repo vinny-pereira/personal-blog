@@ -1,3 +1,12 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components{
+    .nav-item{
+        @apply block text-center my-1 px-1 underline text-lg transition-transform duration-300 hover:scale-110
+    }
+    .section{
+        @apply mx-auto mt-5 w-3/4 md:w-1/2
+    }
+}

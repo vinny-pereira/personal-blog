@@ -7,15 +7,18 @@
         <link rel="stylesheet" href="dist/site.css?v={{ .Version }}">
         <script src="https://unpkg.com/htmx.org@2.0.0" integrity="sha384-wS5l5IKJBvK6sPTKa2WZ1js3d947pvWXbPJ1OmWfEuxLgeHcEbjUUA5i9V5ZkpCw" crossorigin="anonymous"></script>
     </head>
-    <body>
-        <main class="w-screen h-screen">
-            <nav class="w-1/6 h-full flex justify-start content-center flex-col py-2 pr-1 border-black border-r-2">
-                <div class="w-full p-1">
-                    <img src="dist/logo.jpeg" class="object-cover rounded-full" alt="site logo">
-                </div>
-                <a href="javascript:void(0)" class="block text-center my-1 underline text-lg transition-transform duration-300 hover:scale-110">About</a>
-                <a href="javascript:void(0)" class="block text-center my-1 underline text-lg transition-transform duration-300 hover:scale-110">Blog</a>
-            </nav>
+    <body class="w-screen h-screen">
+        <nav class="w-full flex justify-center content-center flex-col py-2 border-black border-b-2 gap-px">
+            <h1 class="text-center text-6xl font-bold py-1">Vinny Pereira</h1>
+            <h2 class="text-center text-lg font-semibold py-1">Full Stack Developer</h2>
+            <div class="flex w-full content-center justify-center gap-px">
+                <a href="javascript:void(0)" hx-get="/home" hx-target="#content" hx-swap="innerHTML" class="nav-item">About</a>
+                <a href="javascript:void(0)" class="nav-item">Blog</a>
+                <a href="javascript:void(0)" hx-get="/contact" hx-target="#content" hx-swap="innerHTML" class="nav-item">Contact</a>
+            <div>
+        </nav>
+        <main class="w-full flex flex-col justify-center content-center w-full" id="content">
+            {{ .Content }}
         </main>
     </body>
 </html>
