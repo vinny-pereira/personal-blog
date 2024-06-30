@@ -4,11 +4,19 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="stylesheet" href="dist/site.css">
+        <link rel="stylesheet" href="dist/site.css?v={{ .Version }}">
         <script src="https://unpkg.com/htmx.org@2.0.0" integrity="sha384-wS5l5IKJBvK6sPTKa2WZ1js3d947pvWXbPJ1OmWfEuxLgeHcEbjUUA5i9V5ZkpCw" crossorigin="anonymous"></script>
     </head>
     <body>
-        <h1>Hello World</h1>
+        <main class="w-screen h-screen">
+            <nav class="w-1/6 h-full flex justify-start content-center flex-col py-2 pr-1 border-black border-r-2">
+                <div class="w-full p-1">
+                    <img src="dist/logo.jpeg" class="object-cover rounded-full" alt="site logo">
+                </div>
+                <a href="javascript:void(0)" class="block text-center my-1 underline text-lg transition-transform duration-300 hover:scale-110">About</a>
+                <a href="javascript:void(0)" class="block text-center my-1 underline text-lg transition-transform duration-300 hover:scale-110">Blog</a>
+            </nav>
+        </main>
     </body>
 </html>
 {{end}}

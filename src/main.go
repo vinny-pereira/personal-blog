@@ -5,12 +5,14 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+    "github.com/google/uuid"
 	"os"
 	"path/filepath"
 )
 
 type PageData struct{
-    Name string
+    Name string;
+    Version string
 }
 
 func main(){
@@ -63,8 +65,12 @@ func main(){
             w.WriteHeader(http.StatusNotFound);
             return;
         }
+
+        version := uuid.New()
+
         data := PageData{
             Name: "Blog",
+            Version: version.String(),
         }
 
 
