@@ -1,3 +1,5 @@
 {{ define "dashboard" }}
-
+<h1>Dashboard</h1>
+<p id="new-post"></p>
+<textarea name="post-text" class="w-50 h-50" hx-post="/parse-md" hx-target="#new-post" hx-swap="innerHTML" hx-trigger="keyup changed delay:500ms"></textarea>
 {{ end }}

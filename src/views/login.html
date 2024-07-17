@@ -1,6 +1,6 @@
 {{ define "login" }}
-<main>
-    <form hx-post="/authenticate" hx-swap="outerHTML">
+<main id="main-content">
+    <form hx-post="/authenticate" hx-swap="outerHTML" hx-target="#main-content">
         <label for="username">Username</label>
         <input type="text" name="username" id="username"/>
         <label for="password">Password</label>

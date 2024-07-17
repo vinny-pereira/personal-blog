@@ -14,6 +14,8 @@ import(
 func HandleAdminEndpoints(){
     http.HandleFunc("/admin", handleAdmin)
     http.HandleFunc("/authenticate", handleAuthentication)
+    http.HandleFunc("/register", handleRegistration)
+    http.HandleFunc("/parse-md", handleParseMarkdown)
 }
 
 
@@ -31,12 +33,12 @@ func isAuthenticated(r *http.Request) bool{
         return false
     }
 
-    collection := Client.Database("yourdb").Collection("sessions")
+    collection := Client.Database("blog").Collection("sessions")
     ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
     defer cancel()
 
     var session struct {
-        UserID  primitive.ObjectID `bson:"user_id"`
+        UserId  primitive.ObjectID `bson:"user_id"`
         Token   string             `bson:"token"`
         Expires time.Time          `bson:"expires"`
     }
@@ -91,7 +93,7 @@ func showDashboard(w http.ResponseWriter, r *http.Request) {
         Content: template.HTML(content),
         Version: version.String(),
     }
-    if err := tmpl.ExecuteTemplate(w, "dashboard", data); err != nil {
+    if err := tmpl.ExecuteTemplate(w, "admin", data); err != nil {
         log.Println(err)
         http.Error(w, "Error executing template.", http.StatusInternalServerError)
     }
@@ -131,15 +133,100 @@ func handleAuthentication(w http.ResponseWriter, r *http.Request){
     http.Redirect(w, r, "/admin", http.StatusSeeOther)
 }
 
-func storeSession(userID primitive.ObjectID, token string, expiresAt time.Time) error {
-    collection := Client.Database("yourdb").Collection("sessions")
+func storeSession(userId primitive.ObjectID, token string, expiresAt time.Time) error {
+    collection := Client.Database("blog").Collection("sessions")
     ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
     defer cancel()
 
     _, err := collection.InsertOne(ctx, bson.M{
-        "user_id": userID,
+        "user_id": userId,
         "token":   token,
         "expires": expiresAt,
     })
     return err
+}
+
+func handleRegistration(w http.ResponseWriter, r *http.Request){
+    if r.Method == http.MethodGet{
+        tmpl, err := ParseTemplates()
+        if err != nil {
+            log.Printf("Error loading templates: %v\n", err)
+            http.Error(w, "Error loading templates.", http.StatusInternalServerError)
+            return
+        }
+        content, err := RenderTemplate(tmpl, "register", nil)
+        if err != nil {
+            log.Printf("Error rendering dashboard template: %v\n", err)
+            http.Error(w, "Error rendering template.", http.StatusInternalServerError)
+            return
+        }
+        version := uuid.New()
+        data := PageData{
+            Content: template.HTML(content),
+            Version: version.String(),
+        }
+        if err := tmpl.ExecuteTemplate(w, "register", data); err != nil {
+            log.Println(err)
+            http.Error(w, "Error executing template.", http.StatusInternalServerError)
+        }
+
+        return
+    }
+    if r.Method == http.MethodPost{
+        username := r.FormValue("username")
+        password := r.FormValue("password")
+
+        if len(username) == 0 || len(password) == 0{
+            http.Error(w, "Required fields not filled", http.StatusBadRequest)
+        }
+
+        err := RegisterUser(username, password)
+        if err != nil{
+            log.Fatal(err)
+            http.Error(w, "Internal server error", http.StatusInternalServerError)
+            return
+        }
+
+        user, err := AuthenticateUser(username, password)
+        if err != nil{
+            log.Fatal(err)
+            http.Error(w, "Internal server error", http.StatusInternalServerError)
+            return
+        }
+
+        sessionToken := uuid.New().String()
+        expiresAt := time.Now().Add(24 * time.Hour)
+
+        http.SetCookie(w, &http.Cookie{
+            Name:    "session_token",
+            Value:   sessionToken,
+            Expires: expiresAt,
+        })
+
+        sessionErr := storeSession(user.Id, sessionToken, expiresAt)
+
+        if sessionErr != nil {
+            log.Printf("Error storing session: %v\n", sessionErr)
+            http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+            return
+        }
+
+        http.Redirect(w, r, "/admin", http.StatusSeeOther)
+        return
+    }
+
+    http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+}
+
+func handleParseMarkdown(w http.ResponseWriter, r *http.Request){
+    if err := r.ParseForm(); err != nil{
+        http.Error(w, "Failed to parse request", http.StatusBadRequest)
+        return
+    }
+
+    text := r.FormValue("post-text")
+    html := MdToHtml([]byte(text))
+   
+    w.Header().Set("Content-Type", "text/html")
+    w.Write(html)
 }
