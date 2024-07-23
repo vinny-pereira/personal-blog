@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"time"
-
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -268,16 +267,17 @@ func handlePostCreation(w http.ResponseWriter, r *http.Request){
         return
     }
 
-    id, err := primitive.ObjectIDFromHex(r.FormValue("id"))
-    if err != nil{
-        http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-        return
-    }
-
+    idStr := r.FormValue("post-id")
     title := r.FormValue("title")
     body := r.FormValue("post-text")
 
-    if id != primitive.NilObjectID{
+    if idStr != primitive.NilObjectID.Hex(){
+        id, err := primitive.ObjectIDFromHex(idStr)
+        if err != nil{
+            http.Error(w, "Invalid Id", http.StatusInternalServerError)
+            return
+        }
+
         post, err := UpdatePost(id, title, body)
         if err != nil {
             http.Error(w, err.Error(), http.StatusBadRequest)

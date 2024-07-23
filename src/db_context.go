@@ -1,15 +1,15 @@
 package main
 
 import (
+	"context"
+	"errors"
+	"log"
+	"time"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
-    "context"
-    "log"
-    "time"
-    "errors"
 )
 
 var Client *mongo.Client
@@ -157,11 +157,11 @@ func UpdatePost(id primitive.ObjectID, title string, body string) (Post, error){
     if err != nil{
         return post, err
     }
-    
+
     update := bson.M{
         "$set": bson.M{
-            "title": post.Title,
-            "body":  post.Body,
+            "title": title,
+            "body":  body,
         },
     }
 
@@ -170,6 +170,9 @@ func UpdatePost(id primitive.ObjectID, title string, body string) (Post, error){
         bson.M{"_id": id},
         update,
     )
+
+    post.Title = title
+    post.Body = body
 
     return post, err
 }
