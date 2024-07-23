@@ -1,5 +1,13 @@
 {{ define "dashboard" }}
-<h1>Dashboard</h1>
-<p id="new-post"></p>
-<textarea name="post-text" class="w-50 h-50" hx-post="/parse-md" hx-target="#new-post" hx-swap="innerHTML" hx-trigger="keyup changed delay:500ms"></textarea>
+<main id="main-content">
+    <div id="posts">
+        {{ range .Posts }}
+            <div>
+                <a href="javascript:void(0)" hx-get="/edit-post?id={{ .Id.Hex }}" hx-target="#post-edit" hx-swap="outerHTML">{{ .Title }}</a>
+            </div>
+        {{ end }}
+    </div>
+    <h1>Dashboard</h1>
+    {{ template "post_form" .Editable }}
+</main>
 {{ end }}

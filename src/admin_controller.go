@@ -1,14 +1,16 @@
 package main
 
-import(
-    "net/http"
-    "log"
-    "html/template"
-    "github.com/google/uuid"
-    "context"
-    "time"
-    "go.mongodb.org/mongo-driver/bson"
-    "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"context"
+	"fmt"
+	"html/template"
+	"log"
+	"net/http"
+	"time"
+
+	"github.com/google/uuid"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func HandleAdminEndpoints(){
@@ -16,6 +18,8 @@ func HandleAdminEndpoints(){
     http.HandleFunc("/authenticate", handleAuthentication)
     http.HandleFunc("/register", handleRegistration)
     http.HandleFunc("/parse-md", handleParseMarkdown)
+    http.HandleFunc("/create-post", handlePostCreation)
+    http.HandleFunc("/edit-post", handlePostEdit)
 }
 
 
@@ -23,7 +27,7 @@ func handleAdmin(w http.ResponseWriter, r *http.Request){
     if !isAuthenticated(r){
         showLoginForm(w, r)
     } else{
-        showDashboard(w, r)
+        showDashboard(w, r, Post{})
     }
 }
 
@@ -75,14 +79,38 @@ func showLoginForm(w http.ResponseWriter, r *http.Request) {
     }
 }
 
-func showDashboard(w http.ResponseWriter, r *http.Request) {
+type Editable struct{
+    Post Post
+    MarkDown template.HTML
+}
+
+type DashBoard struct{
+    Editable Editable
+    Posts []Post
+}
+
+func showDashboard(w http.ResponseWriter, r *http.Request, p Post) {
     tmpl, err := ParseTemplates()
     if err != nil {
         log.Printf("Error loading templates: %v\n", err)
         http.Error(w, "Error loading templates.", http.StatusInternalServerError)
         return
     }
-    content, err := RenderTemplate(tmpl, "dashboard", nil)
+
+    posts, err := GetPosts()
+    if err != nil{
+        http.Error(w, "Couldn't fetch posts", http.StatusInternalServerError)
+    }
+
+    dashBoard := DashBoard{
+        Posts: posts,
+        Editable: Editable{
+            Post: p,
+            MarkDown: template.HTML(MdToHtml([]byte(p.Body))),
+        },
+    }
+
+    content, err := RenderTemplate(tmpl, "dashboard", dashBoard)
     if err != nil {
         log.Printf("Error rendering dashboard template: %v\n", err)
         http.Error(w, "Error rendering template.", http.StatusInternalServerError)
@@ -228,5 +256,80 @@ func handleParseMarkdown(w http.ResponseWriter, r *http.Request){
     html := MdToHtml([]byte(text))
    
     w.Header().Set("Content-Type", "text/html")
-    w.Write(html)
+    if _, err := w.Write(html); err != nil{
+        http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+        return
+    }
+}
+
+func handlePostCreation(w http.ResponseWriter, r *http.Request){
+    if r.Method != http.MethodPost{
+        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+        return
+    }
+
+    id, err := primitive.ObjectIDFromHex(r.FormValue("id"))
+    if err != nil{
+        http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+        return
+    }
+
+    title := r.FormValue("title")
+    body := r.FormValue("post-text")
+
+    if id != primitive.NilObjectID{
+        post, err := UpdatePost(id, title, body)
+        if err != nil {
+            http.Error(w, err.Error(), http.StatusBadRequest)
+            return
+        }
+
+        showDashboard(w, r, post)
+    } else { 
+        post, err := CreatePost(title, body) 
+        if err != nil {
+            http.Error(w, err.Error(), http.StatusBadRequest)
+            return
+        }
+
+        showDashboard(w, r, post)
+    }
+}
+
+func handlePostEdit(w http.ResponseWriter, r *http.Request){
+    if r.Method != http.MethodGet{
+        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+        return
+    }
+
+    if query := r.URL.Query(); !query.Has("id"){
+        http.Error(w, "Post id is required", http.StatusBadRequest)
+        return
+    }
+
+    id := r.URL.Query().Get("id")
+
+    post, err := GetPost(id); 
+    if err != nil{
+        fmt.Println(err)
+        http.Error(w, "Error fetching post", http.StatusInternalServerError)
+        return
+    }
+
+    tmpl, err := ParseTemplates()
+    if err != nil {
+        log.Printf("Error loading templates: %v\n", err)
+        http.Error(w, "Error loading templates.", http.StatusInternalServerError)
+        return
+    }
+
+    editable := Editable{
+        Post: post,
+        MarkDown: template.HTML(MdToHtml([]byte(post.Body))),
+    } 
+
+	if err := tmpl.ExecuteTemplate(w, "post_form", editable); err != nil {
+		log.Println(err)
+		http.Error(w, "Error executing template.", http.StatusInternalServerError)
+	}
 }
