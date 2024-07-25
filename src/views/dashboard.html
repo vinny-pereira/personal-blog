@@ -2,9 +2,10 @@
 <main id="main-content">
     <div id="posts">
         {{ range .Posts }}
-            <div>
+        <div id="id-{{ .Id.Hex }}">
                 <a href="javascript:void(0)" hx-get="/edit-post?id={{ .Id.Hex }}" hx-target="#post-edit" hx-swap="outerHTML">{{ .Title }}</a>
-            </div>
+                <a href="javascript:void(0)" hx-post="/delete-post?id={{ .Id.Hex }}" hx-target="#id-{{ .Id.Hex }}" hx-swap="outerHTML" class="text-pink-400">Delete Post</a>
+        </div>
         {{ end }}
     </div>
     <h1>Dashboard</h1>

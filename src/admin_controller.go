@@ -19,6 +19,7 @@ func HandleAdminEndpoints(){
     http.HandleFunc("/parse-md", handleParseMarkdown)
     http.HandleFunc("/create-post", handlePostCreation)
     http.HandleFunc("/edit-post", handlePostEdit)
+    http.HandleFunc("/delete-post", handlePostDeletion)
 }
 
 
@@ -332,4 +333,28 @@ func handlePostEdit(w http.ResponseWriter, r *http.Request){
 		log.Println(err)
 		http.Error(w, "Error executing template.", http.StatusInternalServerError)
 	}
+}
+
+func handlePostDeletion(w http.ResponseWriter, r *http.Request){
+    if r.Method != http.MethodPost{
+        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+        return
+    }
+
+    if query := r.URL.Query(); !query.Has("id"){
+        http.Error(w, "Post id is required", http.StatusBadRequest)
+        return
+    }
+
+    id := r.URL.Query().Get("id")
+
+    if err := DeletePost(id); err != nil{
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    w.WriteHeader(http.StatusOK)
+    w.Write([]byte(""))
+
+    fmt.Println(w)
 }

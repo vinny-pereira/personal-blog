@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"time"
+    "fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -175,4 +176,26 @@ func UpdatePost(id primitive.ObjectID, title string, body string) (Post, error){
     post.Body = body
 
     return post, err
+}
+
+func DeletePost(id string) error {
+    collection := Client.Database(db).Collection(posts_col)
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+
+    objectID, err := primitive.ObjectIDFromHex(id)
+    if err != nil {
+        return fmt.Errorf("invalid ID format: %v", err)
+    }
+
+    result, err := collection.DeleteOne(ctx, bson.M{"_id": objectID})
+    if err != nil {
+        return err 
+    }
+
+    if result.DeletedCount == 0 {
+        return fmt.Errorf("no post found with ID %s", id)
+    }
+
+    return nil
 }
