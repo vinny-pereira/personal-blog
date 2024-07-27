@@ -95,17 +95,26 @@ func AuthenticateUser(username, password string) (*User, error) {
 }
 
 type Post struct{
-    Id       primitive.ObjectID `bson:"_id,omitempty"`
-    Title    string             `bson:"title,omitempty"`
-    Body     string             `bson:"body,omitempty"`
-    Date     time.Time          `bson:"date"`
+    Id         primitive.ObjectID `bson:"_id,omitempty"`
+    Title      string             `bson:"title,omitempty"`
+    Body       string             `bson:"body,omitempty"`
+    Date       time.Time          `bson:"date"`
+    Synopsys   string             `bson:"synopsys"`
+    Likes      int                `bson:"likes"`
+    CoverImage string             `bson:"coverimage"`
 }
 
-func CreatePost(title, body string) (Post, error){
+func (p Post) MainFormatDate() string {
+    return p.Date.Format(time.DateOnly)
+} 
+
+func CreatePost(title, body string, synopsys string, coverImage string) (Post, error){
     post := Post{ 
         Title: title,
         Body: body,
+        Synopsys: synopsys,
         Date: time.Now(),
+        CoverImage: coverImage,
     }
 
     collection := Client.Database(db).Collection(posts_col)
@@ -149,7 +158,7 @@ func GetPost(id string) (Post, error) {
     return post, err
 }
 
-func UpdatePost(id primitive.ObjectID, title string, body string) (Post, error){
+func UpdatePost(id primitive.ObjectID, title string, body string, synopsys string, coverImage string) (Post, error){
     collection := Client.Database(db).Collection(posts_col)
     ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
     defer cancel()
@@ -163,6 +172,8 @@ func UpdatePost(id primitive.ObjectID, title string, body string) (Post, error){
         "$set": bson.M{
             "title": title,
             "body":  body,
+            "synopsys": synopsys,
+            "coverimagine": coverImage,
         },
     }
 
@@ -174,6 +185,8 @@ func UpdatePost(id primitive.ObjectID, title string, body string) (Post, error){
 
     post.Title = title
     post.Body = body
+    post.Synopsys = synopsys
+    post.CoverImage = coverImage
 
     return post, err
 }
@@ -198,4 +211,31 @@ func DeletePost(id string) error {
     }
 
     return nil
+}
+
+func IncrementLike(id primitive.ObjectID) (Post, error){
+    collection := Client.Database(db).Collection(posts_col)
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+    
+    post, err := GetPost(id.Hex())
+    if err != nil{
+        return post, err
+    }
+
+    post.Likes++
+
+    update := bson.M{
+        "$set": bson.M{
+            "likes": post.Likes,
+        },
+    }
+
+    _, err = collection.UpdateOne(
+        ctx,
+        bson.M{"_id": id},
+        update,
+    )
+
+    return post, err
 }

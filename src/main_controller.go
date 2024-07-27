@@ -1,10 +1,12 @@
 package main
 
-import(
-    "net/http"
-    "html/template"
-    "log"
+import (
+	"html/template"
+	"log"
+	"net/http"
+
 	"github.com/google/uuid"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func HandleEndpoints(){ 
@@ -13,6 +15,8 @@ func HandleEndpoints(){
     http.HandleFunc("/", handleIndex)
     http.HandleFunc("/contact", handleContact)
     http.HandleFunc("/home", handleHome)
+    http.HandleFunc("/blog", handleBlog)
+    http.HandleFunc("/like", handleLikeIncrement)
 }
 
 func handleIndex(w http.ResponseWriter, r *http.Request){
@@ -95,4 +99,59 @@ func handleHome(w http.ResponseWriter, r *http.Request){
 			log.Println(err)
 			http.Error(w, "Error executing template.", http.StatusInternalServerError)
 		}
+}
+
+func handleBlog(w http.ResponseWriter, r *http.Request){
+		tmpl, err := ParseTemplates()
+		if err != nil {
+			log.Printf("Error loading templates: %v\n", err)
+			http.Error(w, "Error loading templates.", http.StatusInternalServerError)
+			return
+		}
+
+        data, err := GetPosts()
+        if err != nil{
+            log.Printf("Error fetching Posts: %v\n", err)
+            http.Error(w, "Error fetching posts.", http.StatusInternalServerError)
+        }
+
+		if err := tmpl.ExecuteTemplate(w, "blog", data); err != nil {
+			log.Println(err)
+			http.Error(w, "Error executing template.", http.StatusInternalServerError)
+		}
+}
+
+func handleLikeIncrement(w http.ResponseWriter, r *http.Request){
+    tmpl, err := ParseTemplates()
+	if err != nil {
+		log.Printf("Error loading templates: %v\n", err)
+		http.Error(w, "Error loading templates.", http.StatusInternalServerError)
+		return
+	}
+
+    if query := r.URL.Query(); !query.Has("id"){
+        http.Error(w, "Post id is required", http.StatusBadRequest)
+        return
+    }
+
+    idStr := r.URL.Query().Get("id")
+
+    id, err := primitive.ObjectIDFromHex(idStr)
+    if err != nil{
+        log.Println(err)
+        http.Error(w, "Invalid Id", http.StatusBadRequest)
+        return
+    }
+
+    data, err := IncrementLike(id)
+    if err != nil{
+        log.Println(err)
+        http.Error(w, "Error incrementing likes", http.StatusInternalServerError)
+        return
+    }
+
+    if err := tmpl.ExecuteTemplate(w, "like-button", data); err != nil{
+        log.Println(err)
+        http.Error(w, "Error executing template.", http.StatusInternalServerError)
+    }
 }

@@ -2,10 +2,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="stylesheet" href="dist/site.css?v={{ .Version }}">
-        <script src="https://unpkg.com/htmx.org@2.0.0" integrity="sha384-wS5l5IKJBvK6sPTKa2WZ1js3d947pvWXbPJ1OmWfEuxLgeHcEbjUUA5i9V5ZkpCw" crossorigin="anonymous"></script>
+        {{ template "head" . }}
     </head>
     <body class="w-screen h-screen">
         <nav class="w-full flex justify-center content-center flex-col py-2 border-black border-b-2 gap-px">
@@ -13,7 +10,7 @@
             <h2 class="text-center text-lg font-semibold py-1">Full Stack Developer</h2>
             <div class="flex w-full content-center justify-center gap-px">
                 <a href="javascript:void(0)" hx-get="/home" hx-target="#content" hx-swap="innerHTML" class="nav-item">About</a>
-                <a href="javascript:void(0)" class="nav-item">Blog</a>
+                <a href="javascript:void(0)" hx-get="/blog" hx-target="#content" hx-swap="innerHTML" class="nav-item">Blog</a>
                 <a href="javascript:void(0)" hx-get="/contact" hx-target="#content" hx-swap="innerHTML" class="nav-item">Contact</a>
             <div>
         </nav>

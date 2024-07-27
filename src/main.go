@@ -14,6 +14,8 @@ type PageData struct {
 func main() {
     ConnectMongoDB()
     HandleEndpoints()
+	fs := http.FileServer(http.Dir("./uploads"))
+	http.Handle("/uploads/", http.StripPrefix("/uploads/", fs))
     HandleAdminEndpoints()
 	log.Println("Server started at :8880")
 	if err := http.ListenAndServe("[::]:8880", nil); err != nil {

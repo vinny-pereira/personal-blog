@@ -1,0 +1,7 @@
+{{ define "blog" }}
+<section id="posts" class="section">
+    {{ range . }}
+        {{ template "post-card" . }}
+    {{ end }}
+</section>
+{{ end }}

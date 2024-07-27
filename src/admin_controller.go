@@ -7,6 +7,10 @@ import (
 	"log"
 	"net/http"
 	"time"
+    "os"
+    "io"
+    "encoding/json"
+    "path/filepath"
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -20,6 +24,7 @@ func HandleAdminEndpoints(){
     http.HandleFunc("/create-post", handlePostCreation)
     http.HandleFunc("/edit-post", handlePostEdit)
     http.HandleFunc("/delete-post", handlePostDeletion)
+    http.HandleFunc("/upload", handleFileUpload)
 }
 
 
@@ -271,6 +276,8 @@ func handlePostCreation(w http.ResponseWriter, r *http.Request){
     idStr := r.FormValue("post-id")
     title := r.FormValue("title")
     body := r.FormValue("post-text")
+    synopsys := r.FormValue("synopsys")
+    coverImage := r.FormValue("cover-image")
 
     if idStr != primitive.NilObjectID.Hex(){
         id, err := primitive.ObjectIDFromHex(idStr)
@@ -279,7 +286,7 @@ func handlePostCreation(w http.ResponseWriter, r *http.Request){
             return
         }
 
-        post, err := UpdatePost(id, title, body)
+        post, err := UpdatePost(id, title, body, synopsys, coverImage)
         if err != nil {
             http.Error(w, err.Error(), http.StatusBadRequest)
             return
@@ -287,7 +294,7 @@ func handlePostCreation(w http.ResponseWriter, r *http.Request){
 
         showDashboard(w, r, post)
     } else { 
-        post, err := CreatePost(title, body) 
+        post, err := CreatePost(title, body, synopsys, coverImage)
         if err != nil {
             http.Error(w, err.Error(), http.StatusBadRequest)
             return
@@ -354,7 +361,58 @@ func handlePostDeletion(w http.ResponseWriter, r *http.Request){
     }
 
     w.WriteHeader(http.StatusOK)
-    w.Write([]byte(""))
+    if _, err := w.Write([]byte("")); err != nil{
+        http.Error(w, "Error creating response", http.StatusInternalServerError)
+        return
+    }
 
     fmt.Println(w)
+}
+
+func handleFileUpload(w http.ResponseWriter, r *http.Request){
+if r.Method != http.MethodPost {
+        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+        return
+    }
+
+    err := r.ParseMultipartForm(10 << 20)
+    if err != nil {
+        http.Error(w, "Unable to parse form", http.StatusBadRequest)
+        return
+    }
+
+    file, header, err := r.FormFile("file")
+    if err != nil {
+        http.Error(w, "Error retrieving the file", http.StatusBadRequest)
+        return
+    }
+    defer file.Close()
+
+    ext := filepath.Ext(header.Filename)
+    filename := uuid.New().String() + ext
+
+    uploadDir := "./uploads"
+    if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
+        http.Error(w, "Unable to create upload directory", http.StatusInternalServerError)
+        return
+    }
+
+    dst, err := os.Create(filepath.Join(uploadDir, filename))
+    if err != nil {
+        http.Error(w, "Unable to create the file", http.StatusInternalServerError)
+        return
+    }
+    defer dst.Close()
+
+    if _, err := io.Copy(dst, file); err != nil {
+        http.Error(w, "Unable to write file", http.StatusInternalServerError)
+        return
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusOK)
+    json.NewEncoder(w).Encode(map[string]string{
+        "filename": filename,
+        "path": "/uploads/" + filename,
+    })
 }
