@@ -1,0 +1,9 @@
+{{ define "read-post" }}
+<section class="section">
+    <h1>{{ .Post.Title }}</h1>
+    <h5>{{ .Post.MainFormatDate }}</h5>
+    <div>
+        {{ .MarkDown }}    
+    </div>
+</section>
+{{ end }}

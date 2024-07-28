@@ -173,7 +173,7 @@ func UpdatePost(id primitive.ObjectID, title string, body string, synopsys strin
             "title": title,
             "body":  body,
             "synopsys": synopsys,
-            "coverimagine": coverImage,
+            "coverimage": coverImage,
         },
     }
 

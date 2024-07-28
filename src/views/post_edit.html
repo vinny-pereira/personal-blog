@@ -8,17 +8,13 @@
     <textarea id="post-text" name="post-text" class="w-50 h-50" hx-post="/parse-md" hx-target="#new-post" hx-swap="innerHTML" hx-trigger="keyup changed delay:500ms">{{ .Post.Body }}</textarea>
     <label for="synopsys">Synopsys</label>
     <textarea id="synopsys" name="synopsys" class="w-50 h-50">{{ .Post.Synopsys }}</textarea>
-    <label for="cover-image">Cover Image</label>
-    <img src="/uploads/{{ .Post.CoverImage }}" alt="post cover image" id="cover-image"/>
-    <input hidden="true" value={{ .Post.CoverImage }} name="cover-image" />
+    <div id="cover-image-wrapper">
+        {{ template "cover-image-field" .Post }}
+    </div>
     <button type="submit">Submit</button>
 </form>
-<form hx-encoding='multipart/form-data' hx-post='/upload'
-          _='on htmx:xhr:progress(loaded, total) set #progress.value to (loaded/total)*100
-             on htmx:afterOnLoad(evt) 
-                set response to JSON.parse(evt.detail.xhr.responseText)
-                set #cover-image.src to response.path
-                set #cover-image-input.value to response.filename'>
+<form hx-encoding='multipart/form-data' hx-post='/upload' hx-target="#cover-image-wrapper"
+    _='on htmx:xhr:progress(loaded, total) set #progress.value to (loaded/total)*100'>
     <input type='file' name='file'>
     <button>
         Upload

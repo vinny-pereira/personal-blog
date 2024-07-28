@@ -17,6 +17,7 @@ func HandleEndpoints(){
     http.HandleFunc("/home", handleHome)
     http.HandleFunc("/blog", handleBlog)
     http.HandleFunc("/like", handleLikeIncrement)
+    http.HandleFunc("/post", handleReadPost)
 }
 
 func handleIndex(w http.ResponseWriter, r *http.Request){
@@ -150,7 +151,61 @@ func handleLikeIncrement(w http.ResponseWriter, r *http.Request){
         return
     }
 
-    if err := tmpl.ExecuteTemplate(w, "like-button", data); err != nil{
+    if err := tmpl.ExecuteTemplate(w, "like-button", data); err != nil{ log.Println(err)
+        http.Error(w, "Error executing template.", http.StatusInternalServerError)
+    }
+}
+
+type PostReadData struct{
+    Posts []Post
+    Post Post
+    MarkDown template.HTML
+}
+
+func handleReadPost(w http.ResponseWriter, r *http.Request){
+    if r.Method != http.MethodGet{
+        http.Error(w, "Only get method is accepted", http.StatusMethodNotAllowed)
+        return
+    }
+
+    
+    if query := r.URL.Query(); !query.Has("id"){
+        http.Error(w, "Post id is required", http.StatusBadRequest)
+        return
+    }
+
+    idStr := r.URL.Query().Get("id")
+
+    posts, err := GetPosts()
+    if err != nil{
+        log.Println(err)
+        http.Error(w, "Error trying to fetch posts", http.StatusInternalServerError)
+        return
+    }
+
+    post, err := GetPost(idStr)
+    if err != nil{
+        log.Println(err)
+        http.Error(w, "Invalid id provided", http.StatusInternalServerError)
+        return
+    }
+
+    markDown := template.HTML(MdToHtml([]byte(post.Body)))
+
+    data := PostReadData{
+        Posts: posts,
+        Post: post,
+        MarkDown: markDown,
+    }
+
+    tmpl, err := ParseTemplates()
+	if err != nil {
+		log.Printf("Error loading templates: %v\n", err)
+		http.Error(w, "Error loading templates.", http.StatusInternalServerError)
+		return
+	}
+
+    if err := tmpl.ExecuteTemplate(w, "read-post", data); err != nil{
         log.Println(err)
         http.Error(w, "Error executing template.", http.StatusInternalServerError)
     }

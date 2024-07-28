@@ -9,7 +9,6 @@ import (
 	"time"
     "os"
     "io"
-    "encoding/json"
     "path/filepath"
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
@@ -370,7 +369,7 @@ func handlePostDeletion(w http.ResponseWriter, r *http.Request){
 }
 
 func handleFileUpload(w http.ResponseWriter, r *http.Request){
-if r.Method != http.MethodPost {
+    if r.Method != http.MethodPost {
         http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
         return
     }
@@ -409,10 +408,15 @@ if r.Method != http.MethodPost {
         return
     }
 
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(http.StatusOK)
-    json.NewEncoder(w).Encode(map[string]string{
-        "filename": filename,
-        "path": "/uploads/" + filename,
-    })
+    tmpl, err := ParseTemplates()
+    if err != nil {
+        log.Printf("Error loading templates: %v\n", err)
+        http.Error(w, "Error loading templates.", http.StatusInternalServerError)
+        return
+    }
+
+	if err := tmpl.ExecuteTemplate(w, "cover-image-field", Post{ CoverImage: filename}); err != nil {
+		log.Println(err)
+		http.Error(w, "Error executing template.", http.StatusInternalServerError)
+	}
 }
