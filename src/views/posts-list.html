@@ -1,0 +1,10 @@
+{{ define "posts-list" }}
+<div id="posts-list">
+    {{ range . }}
+    <div class="flex justify-center items-center">
+        <img src="/uploads/{{ .CoverImage }}" alt="post cover image" class="size-14 rounded-lg"/>
+        <p class="invisible ml-1 absolute transition-opacity duration-300 delay-300 opacity-0 group-hover:opacity-100 group-hover:visible group-hover:static group-hover:delay-300">{{ .Title }}</p>
+    </div>
+    {{ end }}
+</div>
+{{ end }}

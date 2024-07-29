@@ -1,16 +1,16 @@
 package main
 
 import (
-	"context"
-	"errors"
-	"log"
-	"time"
+    "context"
+    "errors"
+    "log"
+    "time"
     "fmt"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"golang.org/x/crypto/bcrypt"
+    "go.mongodb.org/mongo-driver/bson"
+    "go.mongodb.org/mongo-driver/bson/primitive"
+    "go.mongodb.org/mongo-driver/mongo"
+    "go.mongodb.org/mongo-driver/mongo/options"
+    "golang.org/x/crypto/bcrypt"
 )
 
 var Client *mongo.Client
@@ -130,16 +130,18 @@ func GetPosts()([]Post, error){
     ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
     defer cancel()
 
-   var posts []Post
-   cur, err := collection.Find(ctx, bson.D{})
+    opts := options.Find().SetSort(bson.D{{"date", -1}})
 
-   if err != nil{
+    var posts []Post
+    cur, err := collection.Find(ctx, bson.D{}, opts)
+
+    if err != nil{
         return posts, err
-   }
+    }
 
-   err = cur.All(ctx, &posts)
+    err = cur.All(ctx, &posts)
 
-   return posts, err
+    return posts, err
 }
 
 func GetPost(id string) (Post, error) {
@@ -162,7 +164,7 @@ func UpdatePost(id primitive.ObjectID, title string, body string, synopsys strin
     collection := Client.Database(db).Collection(posts_col)
     ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
     defer cancel()
-    
+
     post, err := GetPost(id.Hex())
     if err != nil{
         return post, err
@@ -217,7 +219,7 @@ func IncrementLike(id primitive.ObjectID) (Post, error){
     collection := Client.Database(db).Collection(posts_col)
     ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
     defer cancel()
-    
+
     post, err := GetPost(id.Hex())
     if err != nil{
         return post, err
@@ -238,4 +240,27 @@ func IncrementLike(id primitive.ObjectID) (Post, error){
     )
 
     return post, err
+}
+
+func QueryPosts(filter primitive.M)([]Post, error){
+    collection := Client.Database(db).Collection(posts_col)
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+
+    opts := options.Find().SetSort(bson.D{{"date", -1}})
+
+    var posts []Post
+    cur, err := collection.Find(ctx, filter, opts)
+
+    if err != nil{
+        return posts, err
+    }
+    
+    err = cur.All(ctx, &posts)
+
+    if err != nil{
+        return posts, err
+    }
+
+    return posts, nil
 }

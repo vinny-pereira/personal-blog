@@ -1,9 +1,27 @@
 {{ define "read-post" }}
 <section class="section">
-    <h1>{{ .Post.Title }}</h1>
-    <h5>{{ .Post.MainFormatDate }}</h5>
-    <div>
-        {{ .MarkDown }}    
+    <div class="flex gap-4">
+        <div class="flex-none w-1/12 border-r-2 p-2 group peer transition-all duration-300 hover:w-3/12">
+            <div class="mb-5 border-b-2 pb-5">
+                <div class="relative max-w-md mx-auto">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <svg class="w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <input type="text" name="search-text" hx-get="/search-posts?postID={{ .Post.Id.Hex }}" hx-target="#posts-list" hx-swap="innerHTML" hx-trigger="keyup changed delay:500ms" hx-include="this" class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Search...">
+                </div>
+            </div>
+            {{ template "posts-list" .Posts }}
+        </div>
+        <div class="flex-grow transition-all duration-300 w-11/12 peer-hover:w-9/12">
+            <h1>{{ .Post.Title }}</h1>
+            <h5>{{ .Post.MainFormatDate }}</h5>
+            <div>
+                {{ .MarkDown }}    
+            </div>
+        </div>
     </div>
 </section>
 {{ end }}
+

@@ -56,3 +56,12 @@ func MdToHtml(md []byte) []byte{
 
     return markdown.Render(doc, renderer)
 }
+
+func RemovePostFromList(posts []Post, idToRemove string) []Post {
+    for i, post := range posts {
+        if post.Id.Hex() == idToRemove {
+            return append(posts[:i], posts[i+1:]...)
+        }
+    }
+    return posts
+}
