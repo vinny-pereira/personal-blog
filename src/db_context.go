@@ -101,6 +101,7 @@ type Post struct{
     Date       time.Time          `bson:"date"`
     Synopsys   string             `bson:"synopsys"`
     Likes      int                `bson:"likes"`
+    Comments   int                `bson:"comments"`
     CoverImage string             `bson:"coverimage"`
 }
 
