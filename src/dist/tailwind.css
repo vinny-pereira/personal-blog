@@ -45,4 +45,9 @@
     pre:has(code):before{
         @apply bg-slate-700 relative left-1 top-1 rounded-lg my-1
     }
+
+    .app-wrapper.dark{
+        color: white;
+        background-color: black;
+    }
 }
