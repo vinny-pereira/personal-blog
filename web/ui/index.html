@@ -1,0 +1,29 @@
+{{ define "index" }}
+<!DOCTYPE html>
+<html>
+    <head>
+        {{ template "head" . }}
+    </head>
+    <body class="w-screen h-screen app-wrapper light">
+        <nav class="w-full flex justify-center content-center flex-col p-2 border-black border-b-2 gap-px">
+            <div class="flex w-full items-center justify-between">
+                <div class="flex justify-start items-center gap-4 w-1/2">
+                    <strong>Vinny Pereira</strong>
+                    <a href="https://github.com/vinny-pereira" target="_blank"><i class="fa-brands fa-github-alt"></i></a>
+                    <a href="https://www.linkedin.com/in/vinny-pereira/" target="_blank"><i class="fa-brands fa-linkedin"></i></a>
+                    <a href="https://x.com/_vinny_dev" target="_blank"><i class="fa-brands fa-x-twitter"></i></a>
+                </div>
+                <div class="flex justify-end items-center gap-4 w-1/2">
+                    <a href="javascript:void(0)" hx-get="/home" hx-target="#content" hx-swap="innerHTML">About</a>
+                    <a href="javascript:void(0)" hx-get="/blog" hx-target="#content" hx-swap="innerHTML">Blog</a>
+                    <a href="javascript:void(0)" hx-get="/contact" hx-target="#content" hx-swap="innerHTML">Contact</a>
+                    {{ template "dark-toggle" . }}
+                </div>
+            <div>
+        </nav>
+        <main class="w-full flex flex-col justify-center content-center w-full" id="content">
+            {{ .Content }}
+        </main>
+    </body>
+</html>
+{{end}}

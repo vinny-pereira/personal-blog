@@ -1,0 +1,10 @@
+{{ define "like-button" }}
+<div class="flex justify-around items-center flex-row" id="like-wrapper-{{ .Id.Hex }}">
+    <button hx-trigger="click consume" hx-get="/like?id={{ .Id.Hex }}" hx-target="#like-wrapper-{{ .Id.Hex }}" hx-swap="outerHTML" class="flex-none flex items-center justify-center w-9 h-9 rounded-full text-sky-600 bg-sky-50" type="button" aria-label="Like" hx-stop="click">
+        <svg width="20" height="20" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" />
+        </svg>
+    </button>
+    <small class="ml-2">{{ .Likes }} likes</small>
+</div>
+{{ end }}

@@ -1,0 +1,20 @@
+{{ define "admin" }}
+<!DOCTYPE html>
+<html>
+    <head>
+        {{ template "head" . }}
+    </head>
+    <body class="w-screen h-screen">
+        <nav class="w-full flex justify-center content-center flex-col p-2 border-black border-b-2 gap-px">
+            <div class="flex w-full items-center justify-between">
+                <div class="flex justify-end items-center gap-4 w-1/2">
+                    <a href="javascript:void(0)" hx-get="/posts-management" hx-target="#main-content" hx-swap="innerHTML">Posts</a>
+                    <a href="javascript:void(0)" hx-get="/portfolio-management" hx-target="#main-content" hx-swap="innerHTML">Blog</a>
+                    {{ template "dark-toggle" . }}
+                </div>
+            <div>
+        </nav>
+        {{ .Content }}
+    </body>
+</html>
+{{ end }}

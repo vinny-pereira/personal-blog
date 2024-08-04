@@ -1,0 +1,37 @@
+{{ define "home" }}
+<section class="section grid grid-cols-3">
+    <div class="col-span-2 leading-relaxed">
+        <div class="prose prose-lg max-w-none mb-5">
+            <p class="text-justify mb-5"><img src="dist/profile.jpg" class="rounded-full w-24 h-24 float-left mr-4 mb-2" alt="profile picture">
+            Welcome to my corner of the web! I'm a seasoned full stack developer specialized in <b>the .NET environment, MVP development, and enterprise software solutions.</b> With expertise in front-end frameworks like <b>Angular</b> and <b>React</b>, coupled with proficiency in creating microservices and <b>Golang</b> scripting for backend tasks, I bring a comprehensive skill set to every project.</p>
+            <p class="text-justify">Whether you're looking to build robust enterprise applications or streamline your development process, I'm here to turn your vision into reality. Explore my portfolio and let's discuss how we can elevate your next digital endeavor.</p>
+        </div>
+        <div class="col-span-2">
+            <h2 class="text-2xl font-bold mb-4">Portfolio</h2>
+            <div class="grid grid-cols-6 gap w-full">
+                <div class="col-span-2">
+                    <ul>
+                        <li>
+                            <span>Personal Blog</span>
+                        </li>
+                        <li>
+                            <span>Personal Finance Application</span>
+                        </li>
+                        <li>
+                            <span>Whiteboard webcomponent</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-span-4">
+                    {{ template "portfolio-card" . }}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-span-1 h-full">
+        <div class="flex flex-col justify-center items-center">
+            <h2 class="text-xl font-bold mb-4">Check out my latest posts!</h2>
+        </div>
+    </div>
+</section>
+{{end}}
