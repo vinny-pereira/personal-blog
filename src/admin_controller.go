@@ -24,6 +24,9 @@ func HandleAdminEndpoints(){
     http.HandleFunc("/edit-post", handlePostEdit)
     http.HandleFunc("/delete-post", handlePostDeletion)
     http.HandleFunc("/upload", handleFileUpload)
+    http.HandleFunc("/create-portfolio", handlePortfolioEntry)
+    http.HandleFunc("/posts-management", handlePostManagement)
+    http.HandleFunc("/portfolio-management", handlePortfolioManagement)
 }
 
 
@@ -419,4 +422,70 @@ func handleFileUpload(w http.ResponseWriter, r *http.Request){
 		log.Println(err)
 		http.Error(w, "Error executing template.", http.StatusInternalServerError)
 	}
+}
+
+func handlePortfolioEntry(w http.ResponseWriter, r *http.Request){
+    
+}
+
+func handlePostManagement(w http.ResponseWriter, r *http.Request){
+    tmpl, err := ParseTemplates()
+    if err != nil {
+        log.Printf("Error loading templates: %v\n", err)
+        http.Error(w, "Error loading templates.", http.StatusInternalServerError)
+        return
+    }
+
+    posts, err := GetPosts()
+    if err != nil{
+        http.Error(w, "Couldn't fetch posts", http.StatusInternalServerError)
+    }
+
+    p := Post{}
+
+    dashBoard := DashBoard{
+        Posts: posts,
+        Editable: Editable{
+            Post: p,
+            MarkDown: template.HTML(MdToHtml([]byte(p.Body))),
+        },
+    }
+
+    if err := tmpl.ExecuteTemplate(w, "dashboard", dashBoard); err != nil {
+        log.Println(err)
+        http.Error(w, "Error executing template.", http.StatusInternalServerError)
+    }
+}
+
+type PortfolioManagement struct{
+    
+}
+
+func handlePortfolioManagement(w http.ResponseWriter, r *http.Request){
+    tmpl, err := ParseTemplates()
+    if err != nil {
+        log.Printf("Error loading templates: %v\n", err)
+        http.Error(w, "Error loading templates.", http.StatusInternalServerError)
+        return
+    }
+
+    posts, err := GetPosts()
+    if err != nil{
+        http.Error(w, "Couldn't fetch posts", http.StatusInternalServerError)
+    }
+
+    p := Post{}
+
+    dashBoard := DashBoard{
+        Posts: posts,
+        Editable: Editable{
+            Post: p,
+            MarkDown: template.HTML(MdToHtml([]byte(p.Body))),
+        },
+    }
+
+    if err := tmpl.ExecuteTemplate(w, "portfolio-management", dashBoard); err != nil {
+        log.Println(err)
+        http.Error(w, "Error executing template.", http.StatusInternalServerError)
+    }
 }
