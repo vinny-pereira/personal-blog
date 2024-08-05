@@ -23,6 +23,7 @@ func HandleEndpoints(){
     http.HandleFunc("/like", handleLikeIncrement)
     http.HandleFunc("/post", handleReadPost)
     http.HandleFunc("/search-posts", handleSearchPosts)
+    http.HandleFunc("/portfolio-card", handlePortfolioCard)
 }
 
 func handleIndex(w http.ResponseWriter, r *http.Request){
@@ -33,7 +34,27 @@ func handleIndex(w http.ResponseWriter, r *http.Request){
         return
     }
 
-    content, err := internal.RenderTemplate(tmpl, "home", nil)
+    entries, err := repository.GetPortfolioEntries()
+    if err != nil{
+        log.Printf("Error rendereing home template: %v\n", err)
+        http.Error(w, "Error rendering template", http.StatusInternalServerError)
+        return
+    }
+
+    posts, err := repository.GetPosts()
+    if err != nil{
+        log.Printf("Error rendereing home template: %v\n", err)
+        http.Error(w, "Error rendering template", http.StatusInternalServerError)
+        return
+    }
+
+    home := Home{
+        Entries: entries,
+        DefaultEntry: entries[0],
+        Posts: posts[:5],
+    }
+
+    content, err := internal.RenderTemplate(tmpl, "home", home)
     if err != nil {
         log.Printf("Error rendering home template: %v\n", err)
         http.Error(w, "Error rendering template.", http.StatusInternalServerError)
@@ -79,6 +100,12 @@ func handleContact(w http.ResponseWriter, r *http.Request){
     }
 }
 
+type Home struct{
+    Entries         []repository.PortfolioEntry
+    DefaultEntry    repository.PortfolioEntry
+    Posts           []repository.Post
+}
+
 func handleHome(w http.ResponseWriter, r *http.Request){
 
     tmpl, err := internal.ParseTemplates()
@@ -88,20 +115,27 @@ func handleHome(w http.ResponseWriter, r *http.Request){
         return
     }
 
-    content, err := internal.RenderTemplate(tmpl, "home", nil)
-    if err != nil {
-        log.Printf("Error rendering contact template: %v\n", err)
-        http.Error(w, "Error rendering template.", http.StatusInternalServerError)
+    entries, err := repository.GetPortfolioEntries()
+    if err != nil{
+        log.Printf("Error rendereing home template: %v\n", err)
+        http.Error(w, "Error rendering template", http.StatusInternalServerError)
         return
     }
 
-    version := uuid.New()
-    data := repository.PageData{
-        Content: template.HTML(content),
-        Version: version.String(),
+    posts, err := repository.GetPosts()
+    if err != nil{
+        log.Printf("Error rendereing home template: %v\n", err)
+        http.Error(w, "Error rendering template", http.StatusInternalServerError)
+        return
     }
 
-    if err := tmpl.ExecuteTemplate(w, "home", data); err != nil {
+    home := Home{
+        Entries: entries,
+        DefaultEntry: entries[0],
+        Posts: posts[:5],
+    }
+
+    if err := tmpl.ExecuteTemplate(w, "home", home); err != nil {
         log.Println(err)
         http.Error(w, "Error executing template.", http.StatusInternalServerError)
     }
@@ -223,27 +257,18 @@ func handleSearchPosts(w http.ResponseWriter, r *http.Request){
     }
 
     search := r.URL.Query().Get("search-text")
-    postID := r.URL.Query().Get("postID")
 
     escapedSearch := regexp.QuoteMeta(search)
     pattern := fmt.Sprintf("^%s", escapedSearch)
 
-    objectID, err := primitive.ObjectIDFromHex(postID)
-
     var posts []repository.Post
-    if err != nil{
-        log.Println(err)
-        http.Error(w, err.Error(), http.StatusInternalServerError)
-        return
-    }
+    var err error
 
     if len(escapedSearch) == 0{
         posts, err = repository.GetPosts()
-        posts = internal.RemovePostFromList(posts, postID)
     } else{
         filter := bson.M{
             "title": primitive.Regex{Pattern: pattern, Options: "i"},
-            "_id": bson.M{"$ne": objectID},
         }
 
         posts, err = repository.QueryPosts(filter)
@@ -262,6 +287,39 @@ func handleSearchPosts(w http.ResponseWriter, r *http.Request){
     }
 
     if err := tmpl.ExecuteTemplate(w, "posts-list", posts); err != nil{
+        log.Println(err)
+        http.Error(w, "Error executing template.", http.StatusInternalServerError)
+    }
+}
+
+func handlePortfolioCard(w http.ResponseWriter, r *http.Request){
+    if r.Method != http.MethodGet{
+        http.Error(w, "Only get method is accepted", http.StatusMethodNotAllowed)
+        return
+    }
+
+    if query := r.URL.Query(); !query.Has("id"){
+        http.Error(w, "Post id is required", http.StatusBadRequest)
+        return
+    }
+
+    idStr := r.URL.Query().Get("id")
+
+    entry, err := repository.GetEntry(idStr)
+    if err != nil{
+        log.Println(err)
+        http.Error(w, "Invalid id provided", http.StatusInternalServerError)
+        return
+    }
+
+    tmpl, err := internal.ParseTemplates()
+    if err != nil {
+        log.Printf("Error loading templates: %v\n", err)
+        http.Error(w, "Error loading templates.", http.StatusInternalServerError)
+        return
+    }
+
+    if err := tmpl.ExecuteTemplate(w, "portfolio-card", entry); err != nil{
         log.Println(err)
         http.Error(w, "Error executing template.", http.StatusInternalServerError)
     }

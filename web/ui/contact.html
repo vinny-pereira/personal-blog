@@ -1,5 +1,26 @@
 {{ define "contact" }}
-    <section class="section">
-        <p>My Phone Number: +1 604-902-3921</p>
-    </section>
+<section class="section">
+    <div class="bg-white p-8 rounded-lg dark:bg-black dark:border-white dark:border-2">
+        <h1 class="text-3xl font-bold mb-4 text-start dark:text-white">Vinicius Pereira</h1>
+        <p class="text-start text-gray-600 dark:text-white mb-6">Turning coffee into code since... well, I can't remember when!</p>
+
+        <div class="space-y-4">
+            <a href="tel:+16049023921" class="block bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 transition duration-300 text-center">
+                <i class="fas fa-phone-alt mr-2"></i>+1 (604) 902-3921
+            </a>
+
+            <a href="mailto:viniciuslp42@gmail.com?subject=Software%20Development&body=Hello%2C%20Vinicius!%20I%20would%20like%20to%20discuss%20with%20you%20a%20possible%20development%20project" class="block bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition duration-300 text-center">
+                <i class="fas fa-envelope mr-2"></i>viniciuslp42@gmail.com
+            </a>
+
+            <a href="https://github.com/vinny-pereira" target="_blank" rel="noopener noreferrer" class="block bg-gray-800 text-white py-2 px-4 rounded hover:bg-gray-900 transition duration-300 text-center">
+                <i class="fab fa-github mr-2"></i>GitHub
+            </a>
+
+            <a href="https://www.linkedin.com/in/vinny-pereira/" target="_blank" rel="noopener noreferrer" class="block bg-blue-700 text-white py-2 px-4 rounded hover:bg-blue-800 transition duration-300 text-center">
+                <i class="fab fa-linkedin mr-2"></i>LinkedIn
+            </a>
+        </div>
+    </div>
+</section>
 {{ end }}

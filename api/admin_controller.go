@@ -29,6 +29,9 @@ func HandleAdminEndpoints(){
     http.HandleFunc("/create-portfolio", handlePortfolioEntry)
     http.HandleFunc("/posts-management", handlePostManagement)
     http.HandleFunc("/portfolio-management", handlePortfolioManagement)
+    http.HandleFunc("/create-portfolio-entry", handlePortfolioEntryCreation)
+    http.HandleFunc("/edit-portfolio", handleEntryEdit)
+    http.HandleFunc("/delete-portfolio", handleEntryDeletion)
 }
 
 
@@ -131,6 +134,57 @@ func showDashboard(w http.ResponseWriter, r *http.Request, p repository.Post) {
         Version: version.String(),
     }
     if err := tmpl.ExecuteTemplate(w, "admin", data); err != nil {
+        log.Println(err)
+        http.Error(w, "Error executing template.", http.StatusInternalServerError)
+    }
+}
+
+func getPostsTemplate(w http.ResponseWriter, r *http.Request, p repository.Post){
+    tmpl, err := internal.ParseTemplates()
+    if err != nil {
+        log.Printf("Error loading templates: %v\n", err)
+        http.Error(w, "Error loading templates.", http.StatusInternalServerError)
+        return
+    }
+
+    posts, err := repository.GetPosts()
+    if err != nil{
+        http.Error(w, "Couldn't fetch posts", http.StatusInternalServerError)
+    }
+
+    dashBoard := DashBoard{
+        Posts: posts,
+        Editable: Editable{
+            Post: p,
+            MarkDown: template.HTML(internal.MdToHtml([]byte(p.Body))),
+        },
+    }
+
+    if err := tmpl.ExecuteTemplate(w, "dashboard", dashBoard); err != nil {
+        log.Println(err)
+        http.Error(w, "Error executing template.", http.StatusInternalServerError)
+    }
+}
+
+func getEntriesTemplates(w http.ResponseWriter, r *http.Request, e repository.PortfolioEntry){
+    tmpl, err := internal.ParseTemplates()
+    if err != nil {
+        log.Printf("Error loading templates: %v\n", err)
+        http.Error(w, "Error loading templates.", http.StatusInternalServerError)
+        return
+    }
+
+    entries, err := repository.GetPortfolioEntries()
+    if err != nil{
+        http.Error(w, "Couldn't fetch posts", http.StatusInternalServerError)
+    }
+
+    data := PortfolioManagement{
+        Entries: entries,
+        Entry: e,
+    }
+
+    if err := tmpl.ExecuteTemplate(w, "portfolio-management", data); err != nil {
         log.Println(err)
         http.Error(w, "Error executing template.", http.StatusInternalServerError)
     }
@@ -277,7 +331,7 @@ func handlePostCreation(w http.ResponseWriter, r *http.Request){
         return
     }
 
-    idStr := r.FormValue("post-id")
+    idStr := r.URL.Query().Get("id")
     title := r.FormValue("title")
     body := r.FormValue("post-text")
     synopsys := r.FormValue("synopsys")
@@ -296,7 +350,7 @@ func handlePostCreation(w http.ResponseWriter, r *http.Request){
             return
         }
 
-        showDashboard(w, r, post)
+        getPostsTemplate(w, r, post)
     } else { 
         post, err := repository.CreatePost(title, body, synopsys, coverImage)
         if err != nil {
@@ -304,7 +358,7 @@ func handlePostCreation(w http.ResponseWriter, r *http.Request){
             return
         }
 
-        showDashboard(w, r, post)
+        getPostsTemplate(w, r, post)
     }
 }
 
@@ -395,7 +449,7 @@ func handleFileUpload(w http.ResponseWriter, r *http.Request){
     ext := filepath.Ext(header.Filename)
     filename := uuid.New().String() + ext
 
-    uploadDir := "./uploads"
+    uploadDir := "./web/wwwroot/uploads"
     if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
         http.Error(w, "Unable to create upload directory", http.StatusInternalServerError)
         return
@@ -460,7 +514,8 @@ func handlePostManagement(w http.ResponseWriter, r *http.Request){
 }
 
 type PortfolioManagement struct{
-    
+    Entries []repository.PortfolioEntry
+    Entry   repository.PortfolioEntry
 }
 
 func handlePortfolioManagement(w http.ResponseWriter, r *http.Request){
@@ -471,23 +526,113 @@ func handlePortfolioManagement(w http.ResponseWriter, r *http.Request){
         return
     }
 
-    posts, err := repository.GetPosts()
+    entries, err := repository.GetPortfolioEntries()
     if err != nil{
         http.Error(w, "Couldn't fetch posts", http.StatusInternalServerError)
     }
 
-    p := repository.Post{}
-
-    dashBoard := DashBoard{
-        Posts: posts,
-        Editable: Editable{
-            Post: p,
-            MarkDown: template.HTML(internal.MdToHtml([]byte(p.Body))),
-        },
+    data := PortfolioManagement{
+        Entries: entries,
+        Entry: repository.PortfolioEntry{},
     }
 
-    if err := tmpl.ExecuteTemplate(w, "portfolio-management", dashBoard); err != nil {
+    if err := tmpl.ExecuteTemplate(w, "portfolio-management", data); err != nil {
         log.Println(err)
         http.Error(w, "Error executing template.", http.StatusInternalServerError)
+    }
+}
+
+func handlePortfolioEntryCreation(w http.ResponseWriter, r *http.Request){
+    if r.Method != http.MethodPost{
+        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+        return
+    }
+
+    idStr := r.URL.Query().Get("id")
+    title := r.FormValue("title")
+    repo := r.FormValue("repo")
+    url := r.FormValue("url")
+    coverImage := r.FormValue("cover-image")
+
+    if idStr != primitive.NilObjectID.Hex(){
+        id, err := primitive.ObjectIDFromHex(idStr)
+        if err != nil{
+            http.Error(w, "Invalid Id", http.StatusInternalServerError)
+            return
+        }
+
+        entry, err := repository.UpdateEntry(id, title, repo, url, coverImage)
+        if err != nil {
+            http.Error(w, err.Error(), http.StatusBadRequest)
+            return
+        }
+
+        getEntriesTemplates(w, r, entry)
+    } else { 
+        entry, err := repository.CreatePortfolioEntry(title, repo, url, coverImage)
+        if err != nil {
+            http.Error(w, err.Error(), http.StatusBadRequest)
+            return
+        }
+
+        getEntriesTemplates(w, r, entry)
+    }
+}
+
+func handleEntryEdit(w http.ResponseWriter, r *http.Request){
+    if r.Method != http.MethodGet{
+        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+        return
+    }
+
+    if query := r.URL.Query(); !query.Has("id"){
+        http.Error(w, "Post id is required", http.StatusBadRequest)
+        return
+    }
+
+    id := r.URL.Query().Get("id")
+
+    entry, err := repository.GetEntry(id); 
+    if err != nil{
+        fmt.Println(err)
+        http.Error(w, "Error fetching post", http.StatusInternalServerError)
+        return
+    }
+
+    tmpl, err := internal.ParseTemplates()
+    if err != nil {
+        log.Printf("Error loading templates: %v\n", err)
+        http.Error(w, "Error loading templates.", http.StatusInternalServerError)
+        return
+    }
+
+	if err := tmpl.ExecuteTemplate(w, "portfolio-form", entry); err != nil {
+		log.Println(err)
+		http.Error(w, "Error executing template.", http.StatusInternalServerError)
+	}
+}
+
+func handleEntryDeletion(w http.ResponseWriter, r *http.Request){
+    if r.Method != http.MethodPost{
+        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+        return
+    }
+
+    if query := r.URL.Query(); !query.Has("id"){
+        http.Error(w, "Post id is required", http.StatusBadRequest)
+        return
+    }
+
+    id := r.URL.Query().Get("id")
+
+    if err := repository.DeleteEntry(id); err != nil{
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    w.WriteHeader(http.StatusOK)
+    if _, err := w.Write([]byte("")); err != nil{
+        http.Error(w, "Error creating response", http.StatusInternalServerError)
+        return
     }
 }

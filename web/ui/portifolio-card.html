@@ -1,5 +1,11 @@
 {{ define "portfolio-card" }}
-    <div class="card w-full h-full">
-        <img src="{{ . }}" alt="portfolio image">
+    <div class="card w-full h-full flex flex-col items-start justify-center">
+        <div class="w-full aspect-video mb-4 overflow-hidden rounded-lg">
+            <img src="/uploads/{{ .CoverImage }}" alt="portfolio image" class="w-full h-full object-cover">
+        </div>
+        <label for="repo-{{ .Id.Hex }}">Repository:</label>
+        <a id="repo-{{ .Id.Hex }}" href="{{ .Repo }}" target="_blank" class="mb-2 underline text-sky-700">{{ .Repo }}</a>
+        <label for="url-{{ .Id.Hex }}">Url:</label>
+        <a id="url-{{ .Id.Hex }}" href="{{ .Url }}" target="_blank" class="underline text-sky-700">{{ .Url }}</a>
     </div>
 {{ end }}

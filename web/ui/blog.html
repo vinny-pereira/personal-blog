@@ -1,7 +1,7 @@
 {{ define "blog" }}
 <section id="posts" class="section">
-    {{ range . }}
-        {{ template "post-card" . }}
-    {{ end }}
+    <h1>Search My Posts!</h1>
+    {{ template "searchbar" . }}
+    {{ template "posts-list" . }}
 </section>
 {{ end }}

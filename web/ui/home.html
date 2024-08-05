@@ -10,20 +10,16 @@
             <h2 class="text-2xl font-bold mb-4">Portfolio</h2>
             <div class="grid grid-cols-6 gap w-full">
                 <div class="col-span-2">
-                    <ul>
-                        <li>
-                            <span>Personal Blog</span>
+                    <ul class="divide-y">
+                        {{ range .Entries }}
+                        <li hx-get="/portfolio-card?id={{ .Id.Hex }}" hx-swap="innerHTML" hx-target="#portfolio-card" class="py-2 cursor-pointer hover:underline">
+                            <span>{{ .Title }}</span>
                         </li>
-                        <li>
-                            <span>Personal Finance Application</span>
-                        </li>
-                        <li>
-                            <span>Whiteboard webcomponent</span>
-                        </li>
+                        {{ end }}
                     </ul>
                 </div>
-                <div class="col-span-4">
-                    {{ template "portfolio-card" . }}
+                <div class="col-span-4" id="portfolio-card">
+                        {{ template "portfolio-card" .DefaultEntry }}
                 </div>
             </div>
         </div>
@@ -31,6 +27,9 @@
     <div class="col-span-1 h-full">
         <div class="flex flex-col justify-center items-center">
             <h2 class="text-xl font-bold mb-4">Check out my latest posts!</h2>
+            {{ range .Posts }}
+                {{ template "small-post-card" . }}
+            {{ end }}
         </div>
     </div>
 </section>

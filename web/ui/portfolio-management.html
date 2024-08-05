@@ -1,7 +1,7 @@
-{{ define "dashboard" }}
+{{ define "portfolio-management" }}
 <div class="grid grid-cols-4 w-1/2 h-fit mx-auto">
     <div id="posts" class="col-span-1 flex flex-col justify-start items-center p-2 max-h-screen overflow-scroll">
-        {{ range .Posts }}
+        {{ range .Entries }}
         <div id="id-{{ .Id.Hex }}" class="card my-5 flex flex-col justify-start items-center rounded-lg border-gray-300 w-full h-auto p-2 border-2"> 
             <div class="flex flex-row justify-start items-center border-b-2 overflow-hidden">
                 {{ if .CoverImage }}
@@ -12,15 +12,15 @@
                 <p class="text-wrap">{{ .Title }}</p>
             </div>
             <div class="flex flex-row justify-end items-center w-full">
-                <a href="javascript:void(0)" hx-get="/edit-post?id={{ .Id.Hex }}" class="mx-1" hx-target="#post-edit" hx-swap="outerHTML"><i class="fa-solid fa-pen-to-square"></i></a>
-                <a href="javascript:void(0)" hx-post="/delete-post?id={{ .Id.Hex }}" hx-target="#id-{{ .Id.Hex }}" hx-swap="outerHTML" class="mx-1 text-pink-400" hx-confirm="Are you sure you want to delete post {{ .Title }}?"><i class="fa-solid fa-trash"></i></a>
+                <a href="javascript:void(0)" hx-get="/edit-portfolio?id={{ .Id.Hex }}" class="mx-1" hx-target="#portfolio-entry-edit" hx-swap="outerHTML"><i class="fa-solid fa-pen-to-square"></i></a>
+                <a href="javascript:void(0)" hx-post="/delete-portfolio?id={{ .Id.Hex }}" hx-target="#id-{{ .Id.Hex }}" hx-swap="outerHTML" class="mx-1 text-pink-400" hx-confirm="Are you sure you want to delete portfolio entry {{ .Title }}?"><i class="fa-solid fa-trash"></i></a>
             </div>
         </div>
         {{ end }}
     </div>
     <div class="col-span-3">
-        <h4>Create/Edit Posts</h1>
-        {{ template "post_form" .Editable }}
+        <h4>Create/Edit Portfolio Entries</h1>
+        {{ template "portfolio-form" .Entry }}
     </div>
 </div>
 {{ end }}

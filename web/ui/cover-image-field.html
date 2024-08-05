@@ -1,5 +1,10 @@
 {{ define "cover-image-field" }}
     <label for="cover-image">Cover Image</label>
-    <img src="/uploads/{{ .CoverImage }}" alt="post cover image" id="cover-image"/>
-    <input hidden="true" value={{ .CoverImage }} name="cover-image" />
+    {{ if .CoverImage }}
+        <img src="/uploads/{{ .CoverImage }}" alt="post cover image" id="cover-image" class="rounded-full w-20 h-20 float-left mr-4 mb-2"/>
+        <input hidden="true" value="{{ .CoverImage }}" name="cover-image" />
+    {{ else }}
+        <p>No cover image uploaded</p>
+        <input hidden="true" value="" name="cover-image" />
+    {{ end }}
 {{ end }}

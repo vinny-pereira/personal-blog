@@ -1,28 +1,43 @@
 package repository
 
 import (
-    "html/template"
-    "context"
-    "errors"
-    "log"
-    "time"
-    "fmt"
-    "go.mongodb.org/mongo-driver/bson"
-    "go.mongodb.org/mongo-driver/bson/primitive"
-    "go.mongodb.org/mongo-driver/mongo"
-    "go.mongodb.org/mongo-driver/mongo/options"
-    "golang.org/x/crypto/bcrypt"
+	"context"
+	"errors"
+	"fmt"
+	"html/template"
+	"log"
+	"sync"
+	"time"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var Client *mongo.Client
 const db string = "blog"
 const posts_col string = "posts"
+const portfolio_col string = "portfolio"
 const users_col string = "users"
 
+type AppRepository struct{
+    posts map[primitive.ObjectID]Post
+    lock  *sync.Mutex
+}
 
 type PageData struct {
 	Content template.HTML
 	Version string
+}
+
+type PortfolioEntry struct {
+    Id         primitive.ObjectID `bson:"_id,omitempty"`
+    Title      string             `bson:"title,omitempty"`
+    Date       time.Time          `bson:"date"`
+    Repo       string             `bson:"repo"`
+    Url        string             `bson:"url"`
+    CoverImage string             `bson:"coverimage"`
 }
 
 func ConnectMongoDB() {
@@ -271,4 +286,111 @@ func QueryPosts(filter primitive.M)([]Post, error){
     }
 
     return posts, nil
+}
+
+func GetPortfolioEntries()([]PortfolioEntry, error){
+    collection := Client.Database(db).Collection(portfolio_col)
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+
+    opts := options.Find().SetSort(bson.D{{"date", -1}})
+
+    var entries []PortfolioEntry
+    cur, err := collection.Find(ctx, bson.D{}, opts)
+
+    if err != nil{
+        return entries,err
+    }
+
+    err = cur.All(ctx, &entries)
+
+    return entries, err
+}
+
+func CreatePortfolioEntry(title string, repo string, url string, coverImage string)(PortfolioEntry, error){
+    entry := PortfolioEntry{ 
+        Title: title,
+        Repo: repo,
+        Url: url,
+        Date: time.Now(),
+        CoverImage: coverImage,
+    }
+
+    collection := Client.Database(db).Collection(portfolio_col)
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+
+    _, err := collection.InsertOne(ctx, entry)
+    return entry, err
+}
+
+func UpdateEntry(id primitive.ObjectID, title string, repo string, url string, coverImage string)(PortfolioEntry, error){
+    collection := Client.Database(db).Collection(portfolio_col)
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+
+    entry, err := GetEntry(id.Hex())
+    if err != nil{
+        return entry, err
+    }
+
+    update := bson.M{
+        "$set": bson.M{
+            "title": title,
+            "repo":  repo,
+            "url": url,
+            "coverimage": coverImage,
+        },
+    }
+
+    _, err = collection.UpdateOne(
+        ctx,
+        bson.M{"_id": id},
+        update,
+    )
+
+    entry.Title = title
+    entry.Repo = repo
+    entry.Url = url
+    entry.CoverImage = coverImage
+
+    return entry, err
+}
+
+func GetEntry(id string)(PortfolioEntry, error){
+    collection := Client.Database(db).Collection(portfolio_col)
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+
+    objectId, err := primitive.ObjectIDFromHex(id)
+    if err != nil{
+        return PortfolioEntry{}, err
+    }
+
+    var entry PortfolioEntry
+    err = collection.FindOne(ctx, bson.M{"_id": objectId}).Decode(&entry)
+
+    return entry, err
+}
+
+func DeleteEntry(id string)(error){
+    collection := Client.Database(db).Collection(portfolio_col)
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+
+    objectID, err := primitive.ObjectIDFromHex(id)
+    if err != nil {
+        return fmt.Errorf("invalid ID format: %v", err)
+    }
+
+    result, err := collection.DeleteOne(ctx, bson.M{"_id": objectID})
+    if err != nil {
+        return err 
+    }
+
+    if result.DeletedCount == 0 {
+        return fmt.Errorf("no post found with ID %s", id)
+    }
+
+    return nil
 }

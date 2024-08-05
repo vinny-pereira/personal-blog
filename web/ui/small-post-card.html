@@ -1,0 +1,32 @@
+{{ define "small-post-card" }}
+<div class="grid grid-cols-1 grid-rows-2 cursor-pointer font-sans transition ease-in-out duration-100 mb-5 mt-0 w-3/4 border-2 rounded-lg hover:mb-8 hover:mt-3" hx-get="/post?id={{ .Id.Hex }}" hx-target="#content" hx-swap="innerHTML" hx-trigger="click">
+    <div class="flex-none col-span-1 w-full relative before:rounded-lg before:top-1 before:left-1 before:w-full before:h-full before:absolute before:bg-sky-400">
+        <img src="/uploads/{{ .CoverImage }}" alt="" class="absolute inset-0 w-full h-full object-cover rounded-lg" lazy-loading="true" />
+    </div>
+    <div class="flex-auto col-span-1 p-2 flex flex-col text-wrap">
+        <div class="flex flex-wrap">
+            <h4 class="flex-auto text-xl font-bold text-sky-600 mb-2">
+                {{ .Title }}
+            </h4>
+            <div class="text-sm font-medium text-slate-400">
+                {{ .MainFormatDate }}
+            </div>
+        </div>
+        <div class="flex-grow">
+            <div class="flex items-baseline mt-4 border-b border-slate-200">
+                <div class="space-x-2 flex text-sm font-bold">
+                    <p>{{ .Synopsys }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="flex space-x-4 mt-2 text-sm font-medium">
+            <div class="flex-auto flex space-x-4">
+                <button class="h-10 px-6 font-semibold rounded-full bg-sky-600 text-white" type="submit">
+                    Read
+                </button>
+            </div>
+            {{ template "like-button" . }}
+        </div>
+    </div>
+</div>
+{{ end }}
